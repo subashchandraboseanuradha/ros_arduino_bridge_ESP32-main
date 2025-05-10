@@ -5,6 +5,13 @@
    http://vanadium-ros-pkg.googlecode.com/svn/trunk/arbotix/
 */
 
+#include "commands.h"
+#include "encoder_driver.h"
+#include "motor_driver.h"
+#ifndef MAX_PWM
+#define MAX_PWM 255
+#endif
+
 /* PID setpoint info For a Motor */
 typedef struct {
   double TargetTicksPerFrame;    // target speed in ticks per frame
@@ -33,9 +40,9 @@ SetPointInfo;
 SetPointInfo leftPID, rightPID;
 
 /* PID Parameters */
-int Kp = 20;
-int Kd = 12;
-int Ki = 1;
+int Kp = 10;  // Reduced from 20
+int Kd = 8;   // Reduced from 12
+int Ki = 0;   // Change to 0 initially
 int Ko = 50;
 
 unsigned char moving = 0; // is the base in motion?

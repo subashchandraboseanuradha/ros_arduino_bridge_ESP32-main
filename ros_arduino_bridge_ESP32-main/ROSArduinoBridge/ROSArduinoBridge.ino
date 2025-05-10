@@ -38,6 +38,7 @@
     COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
     INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
     BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#define AUTO_STOP_INTERVAL 
     LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
     CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
     LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
@@ -69,7 +70,7 @@
 #include <Arduino.h>
 
 /* Run the PID loop at 30 times per second */
-#define PID_RATE           100     // Hz
+#define PID_RATE           50     // Hz
 
 /* Convert the rate into an interval */
 const int PID_INTERVAL = 1000 / PID_RATE;
@@ -79,7 +80,7 @@ unsigned long nextPID = PID_INTERVAL;
 
 /* Stop the robot if it hasn't received a movement command
   in this number of milliseconds */
-#define AUTO_STOP_INTERVAL 2000
+#define AUTO_STOP_INTERVAL 5000
 long lastMotorCommand = AUTO_STOP_INTERVAL;
 
 /* Variable initialization */
@@ -171,6 +172,7 @@ void runCommand() {
 /* Setup function--runs once at startup. */
 void setup() {
   Serial.begin(BAUDRATE);
+  Serial.setTimeout(50);  // Set timeout to 50ms for more responsive operation
 
   // Initialize the motor controller if used */
   initEncoder();
@@ -184,7 +186,19 @@ void setup() {
 */
 
 void loop() {
-  
+  // Watchdog reset - implement a simple software watchdog
+  static unsigned long lastWatchdogReset = 0;
+  if (millis() - lastWatchdogReset > 1000) {
+    lastWatchdogReset = millis();
+    // Optional: Add any periodic health check operations here
+  }
+
+  // Clear the serial buffer if it gets too full
+  if (Serial.available() > 20) {
+    while (Serial.available()) Serial.read();
+    resetCommand();
+  }
+
   while (Serial.available() > 0) {
     // Read the next character
     chr = Serial.read();
@@ -235,4 +249,26 @@ void loop() {
     setMotorSpeeds(0, 0);
     moving = 0;
   }
+
+  // Reset if we haven't received any serial data for a long time
+  static unsigned long lastSerialActivity = 0;
+  if (Serial.available() > 0) {
+    lastSerialActivity = millis();
+  } else if (millis() - lastSerialActivity > 30000) { // 30 seconds
+    softwareReset();
+    lastSerialActivity = millis();
+  }
+}
+
+// Emergency reset function - called if communication fails for too long
+void softwareReset() {
+  resetPID();
+  setMotorSpeeds(0, 0);
+  moving = 0;
+  
+  // Reset command buffer
+  resetCommand();
+  
+  // Clear serial buffer
+  while (Serial.available()) Serial.read();
 }

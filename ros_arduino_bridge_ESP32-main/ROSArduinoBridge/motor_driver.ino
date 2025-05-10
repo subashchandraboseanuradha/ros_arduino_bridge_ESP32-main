@@ -55,26 +55,48 @@ void initMotorController() {
 }
 
 void setMotorSpeeds(int leftSpeed, int rightSpeed) {
-  if (leftSpeed > 0) {
-    ledcWrite(LEFT_MOTOR_FORWARD, leftSpeed);
-    ledcWrite(LEFT_MOTOR_BACKWARD, 0);
-  }
-  else if (leftSpeed < 0) {
-    ledcWrite(LEFT_MOTOR_BACKWARD, -leftSpeed);
-    ledcWrite(LEFT_MOTOR_FORWARD, 0);
-  } else {
+  // Constrain speed values to prevent issues
+  leftSpeed = constrain(leftSpeed, -255, 255);
+  rightSpeed = constrain(rightSpeed, -255, 255);
+
+  // Apply a deadband to prevent small PWM values that might not move motors
+  if (abs(leftSpeed) < 20) leftSpeed = 0;
+  if (abs(rightSpeed) < 20) rightSpeed = 0;
+
+  // Left motor control with error handling
+  try {
+    if (leftSpeed > 0) {
+      ledcWrite(LEFT_MOTOR_FORWARD, leftSpeed);
+      ledcWrite(LEFT_MOTOR_BACKWARD, 0);
+    }
+    else if (leftSpeed < 0) {
+      ledcWrite(LEFT_MOTOR_BACKWARD, -leftSpeed);
+      ledcWrite(LEFT_MOTOR_FORWARD, 0);
+    } else {
+      ledcWrite(LEFT_MOTOR_BACKWARD, 0);
+      ledcWrite(LEFT_MOTOR_FORWARD, 0);
+    }
+  } catch (...) {
+    // Recover from any errors
     ledcWrite(LEFT_MOTOR_BACKWARD, 0);
     ledcWrite(LEFT_MOTOR_FORWARD, 0);
   }
 
-  if (rightSpeed > 0) {
-    ledcWrite(RIGHT_MOTOR_FORWARD, rightSpeed);
-    ledcWrite(RIGHT_MOTOR_BACKWARD, 0);
-  }
-  else if (rightSpeed < 0) {
-    ledcWrite(RIGHT_MOTOR_BACKWARD, -rightSpeed);
-    ledcWrite(RIGHT_MOTOR_FORWARD, 0);
-  } else {
+  // Right motor control with error handling
+  try {
+    if (rightSpeed > 0) {
+      ledcWrite(RIGHT_MOTOR_FORWARD, rightSpeed);
+      ledcWrite(RIGHT_MOTOR_BACKWARD, 0);
+    }
+    else if (rightSpeed < 0) {
+      ledcWrite(RIGHT_MOTOR_BACKWARD, -rightSpeed);
+      ledcWrite(RIGHT_MOTOR_FORWARD, 0);
+    } else {
+      ledcWrite(RIGHT_MOTOR_BACKWARD, 0);
+      ledcWrite(RIGHT_MOTOR_FORWARD, 0);
+    }
+  } catch (...) {
+    // Recover from any errors
     ledcWrite(RIGHT_MOTOR_BACKWARD, 0);
     ledcWrite(RIGHT_MOTOR_FORWARD, 0);
   }

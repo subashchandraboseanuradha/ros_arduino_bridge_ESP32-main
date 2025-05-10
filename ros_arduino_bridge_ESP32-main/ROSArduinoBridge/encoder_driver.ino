@@ -20,7 +20,7 @@ void initEncoder(){
 /* Wrap the encoder reading function */
 long readEncoder(int i) {
   if (i == LEFT) return enc0.getCount();
-  else return enc1.getCount();
+  else return -enc1.getCount();  // Invert the right encoder count
 }
 
 /* Wrap the encoder reset function */
