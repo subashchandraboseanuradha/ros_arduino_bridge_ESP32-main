@@ -126,11 +126,20 @@ void runCommand() {
     case PING:
       Serial.println("0");
       break;
-    case READ_ENCODERS:
-      Serial.print(readEncoder(LEFT));
+    case READ_ENCODERS: {
+      // Get encoder values and add timestamp
+      long left_enc = readEncoder(LEFT);
+      long right_enc = readEncoder(RIGHT);
+      unsigned long timestamp = millis();
+      
+      // Send back encoder values with timestamp
+      Serial.print(left_enc);
       Serial.print(" ");
-      Serial.println(readEncoder(RIGHT));
+      Serial.print(right_enc);
+      Serial.print(" ");
+      Serial.println(timestamp);
       break;
+    }
     case RESET_ENCODERS:
       resetEncoders();
       resetPID();
